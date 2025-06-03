@@ -6,10 +6,13 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QSlider, QOpenGLWidget
 )
+
+from skyfield.api import Timescale, load, EarthSatellite
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
 import math
+import os
 import datetime
 
 EARTH_RADIUS = 6378
