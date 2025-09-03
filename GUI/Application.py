@@ -166,9 +166,23 @@ class Satellite():
         times = ts.utc(year, month, np.linspace(day, day+orbitalPeriod, orbitResolution))
 
         positions = []
+        min_distance = 9999
+
+        def calculateDistance(p1,p2): #Tuples
+            p1 = np.array(*p1)
+            p2 = np.array(*p2)
+            return np.linalg.norm(p2 - p1)
+
         for t in times:
             geocentric = self.satellite.at(t)
             x,y,z = (pos/(ERAD/1000) for pos in geocentric.position.km)
+            
+            #Stops at a point near the original start point of the orbit
+            if len(positions) == 1: 
+                min_distance = calculateDistance(positions[0], (x,y,z))
+            if len(positions) > int(orbitResolution*0.90):
+                if min_distance > calculateDistance(positions[-1], (x,y,z))
+
             positions.append((x,y,z))
 
         return positions
@@ -213,13 +227,16 @@ class Satellites(QOpenGLWidget):#Technically not needed, just here to show the s
             return self.quadric
 
     #If sticking with the read_tle_file function from the sat_sim_handler, then this code works, otherwise use other read_file function
-    def update_satellites(self, tle_data):
+    def update_satellites(self, tle_data, ts=None):
         if not tle_data:
             return
+        tleDict = {}
         #tledata = {satname: [line1, line2]}
         for name, lines in tle_data.items():
-            satellite = EarthSatellite(lines[0], lines[1], name, None)
-            self.satellites[name] = Satellite(satellite)
+            satellite = EarthSatellite(lines[0], lines[1], name, ts)
+            tleDict[name] = Satellite(satellite)
+        
+        self.satellites = tleDict
     
     #Temp function, different from the ones Luke and Sean use
     def read_file(self):
