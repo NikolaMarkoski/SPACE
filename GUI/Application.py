@@ -143,7 +143,6 @@ class Satellite():
     def __init__(self, satellite):
         self.satellite = satellite
         self.positions = self.PopulateSatellitePositions()
-        self.position = 0
         self.show = True #When needed its here
 
         #Constants
@@ -161,7 +160,7 @@ class Satellite():
         
         orbitalPeriod = 1 / (revolutionsPerDay - 1) #-1 to make orbits overlap slightly so other orbits can close
 
-        orbitResolution = 300 #How smooth the orbit is
+        orbitResolution = 1000 #How smooth the orbit is
 
         ts = load.timescale()
         times = ts.utc(year, month, np.linspace(day, day+orbitalPeriod, orbitResolution))
@@ -178,9 +177,9 @@ class Satellite():
         if not self.show: return
         pass
 
-    def DrawSatellite(self, quadric):
+    def DrawSatellite(self, quadric, position=0):
         if not self.show: return
-        x,y,z = self.positions[self.position%len(self.positions)]
+        x,y,z = self.positions[position%len(self.positions)]
         glColor3f(*self.color)
         glPushMatrix()
         glTranslate(x,y,z)
@@ -205,6 +204,7 @@ class Satellites(QOpenGLWidget):#Technically not needed, just here to show the s
         else:
             self.read_file()
         self.quadric = gluNewQuadric()
+        self.position = 0
         
     def Quadric(self, quad=None):
         if quad:
@@ -235,7 +235,7 @@ class Satellites(QOpenGLWidget):#Technically not needed, just here to show the s
         
     def Draw(self):
         for satellite in self.satellites.values():
-            satellite.DrawSatellite(self.quadric)
+            satellite.DrawSatellite(self.quadric, self.position)
             satellite.DrawOrbit()
 
 # ————————————————————————————————
