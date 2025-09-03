@@ -59,7 +59,7 @@ class TimeGlobeWidget(QWidget):
         self.now_btn      = QPushButton("Now")
         self.midnight_btn = QPushButton("Midnight")
         self.timer = QTimer(self)
-        self.timer.setInterval(1000)
+        self.timer.setInterval(100)
         self.timer.timeout.connect(self._tick)
         
         self.buildUI()
@@ -108,9 +108,10 @@ class TimeGlobeWidget(QWidget):
         self.start()
 
     def _tick(self):
-        self.time = self.time.addSecs(1)
-        self.time_lbl.setText(self.time.toString("hh:mm:ss"))
-
+        current_time = datetime.datetime.now()
+        self.time = current_time.strftime("%H:%M:%S")
+        self.time_lbl.setText(self.time)
+        self.sphere.update()
  
     def start(self):
         self.timer.start()
@@ -134,10 +135,6 @@ class TimeGlobeWidget(QWidget):
 #  3) Satellites
 # ————————————————————————————————
 
-#Problem:
-#Satellites should be 
-#
-#
 class Satellite():
     #A class to hold all information relating to a satellite to not overcrowd a dictionary
     def __init__(self, satellite):
@@ -154,36 +151,22 @@ class Satellite():
         return (tempColor%253/255, tempColor%254/255, tempColor%255/255)
 
     def PopulateSatellitePositions(self):
-        year = self.satellite.model.epochyr
-        day, month = divmod(self.satellite.model.epochdays, 12) #Split the days of epoch day into months and days in month
         revolutionsPerDay = self.satellite.model.no_kozai * 229.1831 #MinutesInADay/2Pi
         
-        orbitalPeriod = 1 / (revolutionsPerDay - 1) #-1 to make orbits overlap slightly so other orbits can close
-
+        orbitalPeriod = 1 / (revolutionsPerDay)
         orbitResolution = 1000 #How smooth the orbit is
 
         ts = load.timescale()
-        times = ts.utc(year, month, np.linspace(day, day+orbitalPeriod, orbitResolution))
+        times = self.satellite.epoch + np.linspace(0, orbitalPeriod, orbitResolution)
 
         positions = []
         min_distance = 9999
 
-        def calculateDistance(p1,p2): #Tuples
-            p1 = np.array(*p1)
-            p2 = np.array(*p2)
-            return np.linalg.norm(p2 - p1)
-
         for t in times:
             geocentric = self.satellite.at(t)
             x,y,z = (pos/(ERAD/1000) for pos in geocentric.position.km)
-            
-            #Stops at a point near the original start point of the orbit
-            if len(positions) == 1: 
-                min_distance = calculateDistance(positions[0], (x,y,z))
-            if len(positions) > int(orbitResolution*0.90):
-                if min_distance > calculateDistance(positions[-1], (x,y,z))
-
             positions.append((x,y,z))
+        positions.pop(-1)
 
         return positions
 
@@ -204,7 +187,7 @@ class Satellite():
         if not self.show: return
         glColor3f(*self.color)
         glLineWidth(2)
-        glBegin(GL_LINE_STRIP)
+        glBegin(GL_LINE_LOOP)
         for x,y,z in self.positions:
             glVertex3f(x,y,z)
         glEnd()
@@ -227,16 +210,13 @@ class Satellites(QOpenGLWidget):#Technically not needed, just here to show the s
             return self.quadric
 
     #If sticking with the read_tle_file function from the sat_sim_handler, then this code works, otherwise use other read_file function
-    def update_satellites(self, tle_data, ts=None):
+    def update_satellites(self, tle_data):
         if not tle_data:
             return
-        tleDict = {}
         #tledata = {satname: [line1, line2]}
         for name, lines in tle_data.items():
-            satellite = EarthSatellite(lines[0], lines[1], name, ts)
-            tleDict[name] = Satellite(satellite)
-        
-        self.satellites = tleDict
+            satellite = EarthSatellite(lines[0], lines[1], name, None)
+            self.satellites[name] = Satellite(satellite)
     
     #Temp function, different from the ones Luke and Sean use
     def read_file(self):
@@ -246,9 +226,15 @@ class Satellites(QOpenGLWidget):#Technically not needed, just here to show the s
             print("No TLE Data Found")
             return
     
-        for satellite in random.sample(satellites, 30): #Chooses 30 satellites from file
+        for satellite in random.sample(satellites, 10):
             if satellite.model.satnum not in self.satellites:
                 self.satellites[satellite.model.satnum] = Satellite(satellite)
+
+    def DrawConnections(self, matrix=[[]]):
+        #if connection in matrix > 0:
+        #
+        connection = random.randrange(0,1,0.01)
+
         
     def Draw(self):
         for satellite in self.satellites.values():
@@ -356,12 +342,13 @@ class Sphere(QOpenGLWidget):
             glDisable(GL_TEXTURE_2D)
 
         self.satellites.Draw()
+        self.satellites.position += 1
 
         # Draw transparent cone
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDepthMask(GL_FALSE)
-        self.drawCone(radius=1.5, height=2.0, num_slices=40)
+        #self.drawCone(radius=1.5, height=2.0, num_slices=40)
         glDepthMask(GL_TRUE)
         glDisable(GL_BLEND)
 
