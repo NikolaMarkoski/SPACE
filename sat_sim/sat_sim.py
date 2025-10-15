@@ -8,6 +8,7 @@ Description: This script handles satellite simulations using TLE data and provid
 
 from datetime import datetime, timedelta
 from skyfield.api import load, EarthSatellite, utc
+from skyfield.constants import ERAD
 import numpy as np
 import os
 from .sat_sim_output import SatSimOutput
@@ -70,6 +71,8 @@ class SatSim:
         gui.show()
         sys.exit(app.exec_())
 
+    #I don't think this is needed anymore
+    #And if it is, satellite positions should be gotten from spaceObjects
     def get_satellite_positions(self, time):
         # Get satellite positions at a given time.
         if self.tle_data is None or len(self.tle_data) == 0:
@@ -96,21 +99,26 @@ class SatSim:
                 continue  # Skip this satellite if there's an error
         return positions
 
-    def calculate_distance(self, pos1, pos2):
-        # Calculate the Euclidean distance between two satellite positions.
-        return np.linalg.norm(np.array(pos1) - np.array(pos2))
+    #Not needed, because computed in AdjacencyMatrix.py now
+    def generate_adjacency_matrix(self, positions):
+        if not isinstance(positions, dict) or not positions: return
+        keys = list(positions)
+        P = np.array(list(positions.values()))
 
-    def generate_adjacency_matrix(self, positions, distance_threshold=10000):
-        # Generate an adjacency matrix based on the distances between satellites.
-        keys = list(positions.keys())
-        size = len(keys)
-        adj_matrix = np.zeros((size, size), dtype=int)
+        # Compute all pairwise differences (P2 - P1)
+        D = P[None, :, :] - P[:, None, :]
 
-        # Compute distances between all satellite pairs and populate the adjacency matrix
-        for i in range(size):
-            for j in range(i + 1, size):
-                dist = self.calculate_distance(positions[keys[i]], positions[keys[j]])
-                adj_matrix[i, j] = adj_matrix[j, i] = 1 if dist < distance_threshold else 0
+        # Quadratic coefficients
+        a = np.sum(D * D, axis=2)
+        b = 2 * np.sum(P[:, None, :] * D, axis=2)
+        c = np.sum(P[:, None, :] * P[:, None, :], axis=2) - (ERAD/1000)**2
+
+        # Discriminant
+        disc = b**2 - 4 * a * c
+
+        # Build adjacency matrix (1 = visible, 0 = blocked or same)
+        adj_matrix = disc < 0
+        np.fill_diagonal(adj_matrix, 0)
 
         return adj_matrix, keys
 
@@ -138,7 +146,7 @@ class SatSim:
                     continue
 
                 # Generate adjacency matrix
-                adj_matrix, keys = self.generate_adjacency_matrix(positions)
+                adj_matrix, _ = self.generate_adjacency_matrix(positions)
                 matrices.append((current_time.utc_datetime().strftime('%Y-%m-%d %H:%M:%S'), adj_matrix))
 
                 # Increment the current_time by the timestep in days

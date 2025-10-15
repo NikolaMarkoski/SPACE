@@ -1,0 +1,124 @@
+GlobeWidget:
+- Separated Satellite and Ground Station into a separate folder that also includes a base class of SpaceObject.
+- Separated Adjacency matrix functions into own class called AdjacencyMatrix
+- Added GlobeWidget as Subscriber instead of Satellite
+- Changed satellites dict to spaceObjects dict
+- Added various variables for AdjacencyMatrix, mouse tracking, 2D point projection, hover functions, camera controls.
+- Moved drawCone function to GroundStation
+- Added Camera based controls 
+- Added a rotation to earth to align satellite orbits with correct positions based on online trackers. Satellite positions aren't in the correct place due to time being calculated by 86400 instead of 86160 and tle data being 2 months old when tle data is really inaccurate past 2 weeks old.
+- Changed base satellite draw to incorporate both satellites and ground stations.
+- Added function to add hardcoded ground Stations.
+- Added function to generate 2D point projection for space objects and earth model for hover function.
+- Added Mouse control to simulation, including:
+	Right Click: Toggle Orbit
+	Left Click Drag: Camera Pan
+	Scroll: Zoom
+	MouseMove: Hover
+- Added Helper function for debugging position in simulation
+- Added function to update all SpaceObjects. Steps:
+	1. Check if tle_data exists
+	2. Add new satellites from tle_data
+	3. Delete satellites if not in tle_data
+	4. Change satellite show value based on tle_status
+	5. Update satellite position based on the current time with utc offset.
+	6. Generate Adjacency matrix of all (can work for all, but currently only does satellites) SpaceObjects.
+
+
+TLEDisplay.py:
+- Changed for loop to call dictionary once instead of once + twice per loop
+
+TimeSliderWidget.py:
+- Got Rid of this file, seemed not used.
+
+TimeGlobeWidget.py:
+- Added line to make value update as time progresses. Needed for satellite updating position
+
+PossiblyUsefulFunctions.py:
+- Added file that contains functions that could be useful in the future. Currently contains function for create an adjacency matrix with variable transmission strengths, function for creating adjacency matrix for all space objects, function for adding groundstation connections to existing satellite adjacency matrix.
+
+CollapsibleOverlay.py:
+- Changed duplicated code into looping code for stop_animations
+
+SpaceObjects/base.py:
+- Base Class for Satellite, GroundStation and possible future SpaceObjects. Includes Enum for differentiating between object types
+
+GraphDisplay.py:
+- Added variables to keep some of the constants of the graphs so to reduce computation time.
+- Changed update_graphs:
+	- Gets Adjacency Matrix and keys from backend where AdjacencyMatrix class updates it to.
+	- Compares new matrix with old matrix to stop redrawing with same matrix
+	- Added one time creation of Adjacency and Connections Graph. When there is one of either they update instead of being created again.
+	- Old Matrix becomes a copy of new Matrix
+	- Added extra except clause for all Exceptions.
+
+Satellite.py:
+- Removed PyQt5 imports, not needed
+- Changed Satellite to have base class of SpaceObject, and inherits type and name.
+- Added Boolean to dictate whether orbit is shown
+- Changed colour to have values near gray to help differentiate between orbit, satellite and connection
+- Added inherited Draw and update functions to draw satellite, orbit and hover in one, and get next position based on current time
+- Changed PopulateSatellitePositions to Kartik's optimised version, adding a bug fix
+- Removed DrawLabel function, not needed.
+- Changed Orbit Drawing to Line loop instead of line strip
+- Added Hover function
+- Removed Satellites class
+
+AdjacencyMatrix.py:
+- Has function for detecting Line of Sight between ground stations and satellites.
+- Has function for generating adjacency matrix, updating backend matrix and keys
+- Has function to draw connection between all spaceObjects
+
+GroundStation.py:
+- Child Class of SpaceObject
+- Class for Ground Stations
+- Has drawCone function, near exact replica of Sean's drawcone. Includes function to get rotation based on the location of the groundStation.
+- Has function for drawing
+- Has function find position based on longitude and latitude coordinates
+
+Backend.py:
+- Added class variable to store elapsedSeconds based on sliders value
+- Changed timestep to be 1/60 instead of 0.01666666
+- Updated print statement quote marks
+- Changed current_time to be based on timedelta(seconds=elapsedSeconds)
+- Updated get_data_from_enabled_tle_slots to be more pythonic
+- Added time measuring for each subscriber to _notify.
+
+sat_sim_handler.py:
+- Updated read_tle_file. Literally modified code from skyfield
+
+Various changes to naming conventions in loops
+
+Roughly Average Computation times on my computer:
+idle:
+ - GlobeWidget: 77mcs
+ - TimeGlobeWidget: 4mcs
+ - GraphDisplay: 5mcs
+ - Total: 168mcs
+11 Satellites:
+ - GlobeWidget: 20.6ms
+ - TimeGlobeWidget: 7mcs
+ - GraphDisplay: 24mcs
+ - Total: 20.8ms
+40 Satellites:
+ - GlobeWidget: 68ms
+ - TimeGlobeWidget:98mcs
+ - GraphDisplay: 17mcs
+ - Total: 68ms
+100 Satellites:
+ - GlobeWidget: 171ms
+ - TimeGlobeWidget: 10mcs
+ - GraphDisplay: 6ms
+ - Total: 178ms
+300 Satellites:
+ - GlobeWidget: 522ms
+ - TimeGlobeWidget: 8mcs
+ - GraphDisplay: 44ms
+ - Total: 567ms
+Did not function with more than 500 satellites, do not even recommend 300, see image.
+Also got errors for no scipy module somewhere inputting 500 satellites
+
+Bugs Found:
+Unchecking Satellite in TLEDisplay tab makes some connections go through earth.
+
+

@@ -10,6 +10,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from interfaces.handler import Handler
+from skyfield.api import load
 
 class SatSimHandler(Handler):
     # Handles the input of TLE data for satellite simulation processes.
@@ -60,36 +61,35 @@ class SatSimHandler(Handler):
         # Executes the SatSim module by calling its run method.
         self.sat_sim.run()
 
+    #We should be using load.tle_file, but whatever
     def read_tle_file(self, file_path):
         # Reads TLE data from the specified file path.
         tle_data = {}
         try:
-            with open(file_path, 'r') as f:
+            with open(file_path, 'rb') as f:
                 lines = [line.strip() for line in f.readlines()]
 
-            # Handle files with or without a title line (3LE or 2LE)
-            i = 0
-            while i < len(lines):
-                if lines[i].startswith('1') or lines[i].startswith('2'):
-                    # This is the 2LE format (no title line)
-                    tle_line1 = lines[i].strip()
-                    tle_line2 = lines[i + 1].strip()
-                    tle_data[f"Satellite_{i // 2 + 1}"] = [tle_line1, tle_line2]
-                    i += 2
+            #Taken from parse_tle_file from iokit from skyfield
+            b0 = b1 = b''
+            for b2 in lines:
+                if (b2.startswith(b'2 ') and len(b2) >= 69 and b1.startswith(b'1 ') and len(b1) >= 69):
+                    b0 = b0.rstrip(b' \n\r')
+                    if b0.startswith(b'0 '):
+                        b0 = b0[2:]
+                    name = b0.decode('ascii')
+                    
+                    line1 = b1.decode('ascii')
+                    line2 = b2.decode('ascii')
+                    tle_data[name] = [line1, line2]
+
+                    b0 = b1 = b''
                 else:
-                    # 3LE format (title line included)
-                    name = lines[i].strip()
-                    tle_line1 = lines[i + 1].strip()
-                    tle_line2 = lines[i + 2].strip()
-                    tle_data[name] = [tle_line1, tle_line2]
-                    i += 3
+                    b0 = b1
+                    b1 = b2
 
-            if not tle_data:
-                return None
             return tle_data
-
-        except OSError:
-            raise
+        except OSError as e:
+            raise e
         except Exception as e:
             print(f"Error reading TLE file at {file_path}: {e}")
             raise ValueError("Error reading TLE file.")
