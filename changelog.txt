@@ -115,10 +115,9 @@ idle:
  - TimeGlobeWidget: 8mcs
  - GraphDisplay: 44ms
  - Total: 567ms
-Did not function with more than 500 satellites, do not even recommend 300, see image.
+Did not function with more than 500 satellites, do not even recommend 300, see image on discord.
 Also got errors for no scipy module somewhere inputting 500 satellites
 
-Bugs Found:
-Unchecking Satellite in TLEDisplay tab makes some connections go through earth.
+
 
 
