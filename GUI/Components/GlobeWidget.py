@@ -113,7 +113,7 @@ class GlobeWidget(QOpenGLWidget):
         glRotatef(-90, 1, 0, 0)  # Rotate globe forward so poles face up/down
 
         glPushMatrix()
-        glRotatef(-90,0,0,1)#Rotate earth so orbits and satellites line up with online trackers, almost
+        glRotatef(-180,0,0,1)#Rotate earth so orbits and satellites line up with online trackers, almost
 
         # Draw Earth (opaque)
         if self.textureID:
@@ -185,7 +185,7 @@ class GlobeWidget(QOpenGLWidget):
         self.twoDPoints = twoDPoints.copy()
 
     #Mouse Stuff
-    def getCurrentSatellite(self, x, y):
+    def getCurrentObject(self, x, y):
         closest_point = None
         min_depth = float("inf")
 
@@ -199,12 +199,11 @@ class GlobeWidget(QOpenGLWidget):
                     closest_point = sat
         return closest_point
 
-
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.last_mouse_pos = event.pos()
         if event.button() == Qt.RightButton:
-            currentSatellite = self.getCurrentSatellite(event.x(), event.y())
+            currentSatellite = self.getCurrentObject(event.x(), event.y())
             if currentSatellite:
                 currentSatellite.showOrbit ^= True
             self.update()
@@ -218,7 +217,7 @@ class GlobeWidget(QOpenGLWidget):
         y = event.y()
 
         if self.twoDPoints and self.last_mouse_pos is None:
-            closest_point = self.getCurrentSatellite(x,y)
+            closest_point = self.getCurrentObject(x,y)
 
             if self.last_hover and closest_point != self.last_hover: self.last_hover.hover = False
 
@@ -329,5 +328,10 @@ class GlobeWidget(QOpenGLWidget):
             if obj.type == SpaceObjectType.Satellite and obj.show:
                 positions.append(obj.position)
                 keys.append(key)
-                
+
+        if len(self.backend.satelliteNames) != len(keys):
+            self.backend.satelliteNames = [sat.name[-4:] for sat in self.spaceObjects.values() if sat.type==SpaceObjectType.Satellite]
+
         self.ObjectAdjacencyMatrix.generate_adjacency_matrix(positions, keys)
+
+

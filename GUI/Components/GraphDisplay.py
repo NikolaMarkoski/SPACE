@@ -3,8 +3,13 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
 import networkx as nx
+import random
 
 from Components.CollapsibleOverlay import CollapsibleOverlay, OverlaySide
+
+NODESIZE=80
+EDGESIZE=0.5
+FONTSIZE=6
 
 class GraphDisplay(CollapsibleOverlay):
 
@@ -74,10 +79,10 @@ class GraphDisplay(CollapsibleOverlay):
             # --- update connection graph ---
             if self.conGraph is None:
                 self.conGraph = nx.from_numpy_array(adj_matrix)
-                self.conGraphPos = nx.spring_layout(self.conGraph)
-                self.conGraphNodes = nx.draw_networkx_nodes(self.conGraph, self.conGraphPos, ax=self.ax_conn, node_color='skyblue')
-                self.conGraphEdges = nx.draw_networkx_edges(self.conGraph, self.conGraphPos, ax=self.ax_conn)
-                self.conGraphLabels = nx.draw_networkx_labels(self.conGraph, self.conGraphPos, ax=self.ax_conn)
+                self.conGraphPos = nx.arf_layout(self.conGraph)
+                self.conGraphNodes = nx.draw_networkx_nodes(self.conGraph, self.conGraphPos, ax=self.ax_conn, node_color='skyblue', node_size=NODESIZE)
+                self.conGraphEdges = nx.draw_networkx_edges(self.conGraph, self.conGraphPos, ax=self.ax_conn, alpha=0.5, width=EDGESIZE)
+                self.conGraphLabels = nx.draw_networkx_labels(self.conGraph, self.conGraphPos, ax=self.ax_conn, font_size=FONTSIZE, labels={i: self.backend.satelliteNames[i] for i in self.conGraph.nodes()})
                 self.ax_conn.set_title('Connection Graph')
             else:
                 self.conGraph = nx.from_numpy_array(adj_matrix)
@@ -87,13 +92,13 @@ class GraphDisplay(CollapsibleOverlay):
                     if self.conGraphLabels is not None:
                         for label in self.conGraphLabels.values():
                             label.remove()
-                    self.conGraphPos = nx.spring_layout(self.conGraph, pos=self.conGraphPos, iterations=1)
-                    self.conGraphNodes = nx.draw_networkx_nodes(self.conGraph, self.conGraphPos, ax=self.ax_conn, node_color='skyblue')
-                    self.conGraphLabels = nx.draw_networkx_labels(self.conGraph, self.conGraphPos, ax=self.ax_conn)
+                    self.conGraphPos = nx.arf_layout(self.conGraph)
+                    self.conGraphNodes = nx.draw_networkx_nodes(self.conGraph, self.conGraphPos, ax=self.ax_conn, node_color='skyblue', node_size=NODESIZE)
+                    self.conGraphLabels = nx.draw_networkx_labels(self.conGraph, self.conGraphPos, ax=self.ax_conn, font_size=FONTSIZE, labels={i: self.backend.satelliteNames[i] for i in self.conGraph.nodes()})
 
                 if self.conGraphEdges is not None:
                     self.conGraphEdges.remove()
-                self.conGraphEdges = nx.draw_networkx_edges(self.conGraph, self.conGraphPos, ax=self.ax_conn)
+                self.conGraphEdges = nx.draw_networkx_edges(self.conGraph, self.conGraphPos, ax=self.ax_conn, alpha=0.5, width=EDGESIZE)
 
             if self.canvas_conn.width() > 0 and self.canvas_adj.height() > 0:
                 self.canvas_conn.draw()
@@ -103,7 +108,7 @@ class GraphDisplay(CollapsibleOverlay):
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"An error occurred during graph update: {e}")
         except Exception as e:
-            print(f'Exception Occurred: {e.with_traceback}')
+            print(f'Exception Occurred: {e}\nTraceback: {e.__traceback__}')
 
 #        
 #

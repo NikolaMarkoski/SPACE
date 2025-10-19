@@ -49,6 +49,7 @@ class TimeGlobeWidget(QWidget):
         self.globe = GlobeWidget(self.backend)
 
         self.backend.subscribe(self.onDataChanged)
+        self.setFocusPolicy(Qt.StrongFocus)
         
         # Container for Clock
         self.clock_container = QWidget()
@@ -145,6 +146,7 @@ class TimeGlobeWidget(QWidget):
         self.slider.setValue((QTime(0, 0).secsTo(self.time)))
         self.slider.blockSignals(False)
         self.timer.start()
+        self.update()
 
     def midnight(self):
         self.timer.stop()
@@ -158,13 +160,11 @@ class TimeGlobeWidget(QWidget):
 
     # Slider Controls
     def onSlider(self, value):
-        print(seconds_to_degrees(value))
         self.timer.stop()
         self.time = QTime(0,0).addSecs(value)
         self.time_display.setText(self.time.toString("hh:mm:ss"))
         self.timer.start()
-        self.globe.yRot = float(value/240)
-        self.globe.update()
+        self.update()
 
     def update_display_and_slider(self):
         self.time_display.setText(self.time.toString("hh:mm:ss"))
@@ -182,3 +182,15 @@ class TimeGlobeWidget(QWidget):
         self.anim.setStartValue(self.slider.value())
         self.anim.setEndValue(self.slider.maximum())
         self.anim.start()
+
+    def keyPressEvent(self, event):
+        match event.text().lower():
+            case 'n':
+                self.now()
+            case 'm':
+                self.midnight()
+            case ' ':
+                if self.timer.isActive():
+                    self.timer.stop()
+                else:
+                    self.timer.start()

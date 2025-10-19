@@ -48,6 +48,7 @@ class Backend(metaclass=Singleton):
 
         self.adjacencyMatrix = None#One variable to make the function call only once
         self.adjacencyMatrixKeys = []
+        self.satelliteNames = []
 
     def set_local_time(self):
         # Get the current time

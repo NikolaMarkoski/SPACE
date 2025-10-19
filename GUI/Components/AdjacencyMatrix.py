@@ -86,7 +86,7 @@ class AdjacencyMatrix():
 
                 if not all([firstObject.show, secondObject.show]): continue #if one of the satellites isn't shown, don't draw connection
                     
-                if bestConnection is not None and firstObject in bestConnection and firstObject != bestConnection[-1]:
+                if bestConnection is not None and any({bestConnection[i], bestConnection[i+1]} == {firstObject, secondObject} for i in range(len(bestConnection)-1)):
                     glColor3f(0.0,1.0,0.0) #Green
                 else: 
                     glColor3f(1.0,0.0,0.0) #Red
