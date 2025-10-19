@@ -4,10 +4,11 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
 import networkx as nx
 import random
+import traceback
 
 from Components.CollapsibleOverlay import CollapsibleOverlay, OverlaySide
 
-NODESIZE=80
+NODESIZE=200
 EDGESIZE=0.5
 FONTSIZE=6
 
@@ -61,17 +62,13 @@ class GraphDisplay(CollapsibleOverlay):
         if self.oldMatrix is not None and np.array_equal(self.oldMatrix, adj_matrix): return
         try:
             # --- update adjacency graph ---
-            if self.adj_img is None:
-                self.adj_img = self.ax_adj.imshow(adj_matrix, cmap='Blues', interpolation='none', aspect='equal')
-                self.ax_adj.set_title('Adjacency Matrix')
-            else:
-                self.adj_img.set_data(adj_matrix)
-
-            if len(self.ax_adj.get_xticks()) != len(keys):
-                self.ax_adj.set_xticks(np.arange(len(keys)))
-                self.ax_adj.set_yticks(np.arange(len(keys)))
-                self.ax_adj.set_xticklabels(keys, rotation=90)
-                self.ax_adj.set_yticklabels(keys)
+            self.ax_adj.clear()
+            self.ax_adj.imshow(adj_matrix, cmap='Blues', interpolation='none', aspect='equal')
+            self.ax_adj.set_title('Adjacency Matrix')
+            self.ax_adj.set_xticks(np.arange(len(keys)))
+            self.ax_adj.set_yticks(np.arange(len(keys)))
+            self.ax_adj.set_xticklabels(keys, rotation=90)
+            self.ax_adj.set_yticklabels(keys)
 
             if self.canvas_adj.width() > 0 and self.canvas_adj.height() > 0:#Get rid of runtimeWarning
                 self.canvas_adj.draw()  
@@ -87,16 +84,16 @@ class GraphDisplay(CollapsibleOverlay):
             else:
                 self.conGraph = nx.from_numpy_array(adj_matrix)
                 if len(self.conGraphPos) != len(self.conGraph):#Will only change graph if nodes are changed, if labels are then it will break
-                    if self.conGraphNodes is not None:
+                    if self.conGraphNodes:
                         self.conGraphNodes.remove()
-                    if self.conGraphLabels is not None:
+                    if self.conGraphLabels:
                         for label in self.conGraphLabels.values():
                             label.remove()
                     self.conGraphPos = nx.arf_layout(self.conGraph)
                     self.conGraphNodes = nx.draw_networkx_nodes(self.conGraph, self.conGraphPos, ax=self.ax_conn, node_color='skyblue', node_size=NODESIZE)
                     self.conGraphLabels = nx.draw_networkx_labels(self.conGraph, self.conGraphPos, ax=self.ax_conn, font_size=FONTSIZE, labels={i: self.backend.satelliteNames[i] for i in self.conGraph.nodes()})
 
-                if self.conGraphEdges is not None:
+                if self.conGraphEdges:
                     self.conGraphEdges.remove()
                 self.conGraphEdges = nx.draw_networkx_edges(self.conGraph, self.conGraphPos, ax=self.ax_conn, alpha=0.5, width=EDGESIZE)
 
@@ -108,7 +105,7 @@ class GraphDisplay(CollapsibleOverlay):
         except ValueError as e:
             QMessageBox.critical(self, "Error", f"An error occurred during graph update: {e}")
         except Exception as e:
-            print(f'Exception Occurred: {e}\nTraceback: {e.__traceback__}')
+            print(f"Exception Occurred: {e}\nTraceback:\n{''.join(traceback.format_exception(e))}")
 
 #        
 #

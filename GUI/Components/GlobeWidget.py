@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from PyQt5.QtCore import Qt, QTime, QTimer, QPropertyAnimation, QEasingCurve, QPoint
-from PyQt5.QtGui import QFontDatabase, QFont, QSurfaceFormat, QImage
+from PyQt5.QtGui import QFontDatabase, QFont, QSurfaceFormat, QImage, QKeyEvent
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QSlider, QOpenGLWidget
@@ -47,6 +47,7 @@ class GlobeWidget(QOpenGLWidget):
         self.camRadius = 5.0
         self.camAzimuth = 0.0
         self.camElevation = 0.0
+
 
     def initializeGL(self):
         glClearColor(0.2, 0.3, 0.3, 1.0)
@@ -113,7 +114,7 @@ class GlobeWidget(QOpenGLWidget):
         glRotatef(-90, 1, 0, 0)  # Rotate globe forward so poles face up/down
 
         glPushMatrix()
-        glRotatef(-180,0,0,1)#Rotate earth so orbits and satellites line up with online trackers, almost
+        glRotatef(270,0,0,1)#Rotate earth so orbits and satellites line up with online trackers, almost
 
         # Draw Earth (opaque)
         if self.textureID:
@@ -293,6 +294,13 @@ class GlobeWidget(QOpenGLWidget):
     def updateSpaceObjects(self):
         tle_data = self.backend.tle_dict
         tle_status = self.backend.tle_status
+
+        #Delete satellites no longer in TLE data (except ground stations)
+        for key in list(self.spaceObjects.keys()):
+            obj = self.spaceObjects[key]
+            if obj.type != SpaceObjectType.GroundStation and key not in tle_data:
+                del self.spaceObjects[key]
+        
         if not tle_data and not tle_status:
             print("Null passed")
             return
@@ -303,12 +311,6 @@ class GlobeWidget(QOpenGLWidget):
             if key not in self.spaceObjects:
                 satellite = EarthSatellite(lines[0], lines[1], key)
                 self.spaceObjects[key] = Satellite(SpaceObjectType.Satellite, key, satellite)
-
-        #Delete satellites no longer in TLE data (except ground stations)
-        for key in list(self.spaceObjects.keys()):
-            obj = self.spaceObjects[key]
-            if obj.type != SpaceObjectType.GroundStation and key not in tle_data:
-                del self.spaceObjects[key]
 
         #Changes boolean for show in space objects
         for name, value in tle_status.items():
