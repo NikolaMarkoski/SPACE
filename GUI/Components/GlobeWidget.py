@@ -37,6 +37,7 @@ class GlobeWidget(QOpenGLWidget):
 
         self.spaceObjects = {}
         self.spaceObjects.update(self.loadGroundStations())
+        self.previousKeys = []
         self.ObjectAdjacencyMatrix = AdjacencyMatrix(backend)
         
         self.setMouseTracking(True)
@@ -47,16 +48,23 @@ class GlobeWidget(QOpenGLWidget):
         self.camRadius = 5.0
         self.camAzimuth = 0.0
         self.camElevation = 0.0
+        self.ts = load.timescale()
 
+    def resizeGL(self, width, height):
+        glViewport(0, 0, width, height)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluPerspective(45.0, width / float(height or 1), 1.0, 100.0)
+        glMatrixMode(GL_MODELVIEW)
 
     def initializeGL(self):
         glClearColor(0.2, 0.3, 0.3, 1.0)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_TEXTURE_2D)
 
-        # Load Textures
         self.textureID = self.loadTexture("GUI/Assets/Earth.png")
         self.bgtextureID = self.loadTexture("GUI/Assets/Background.jpg")
+
         if not self.textureID:
             glDisable(GL_TEXTURE_2D)
         else:
@@ -67,20 +75,13 @@ class GlobeWidget(QOpenGLWidget):
         else:
             print(f"[OK] bgTexture loaded. ID: {self.bgtextureID}")
 
-        # Flip texture vertically
         glMatrixMode(GL_TEXTURE)
         glLoadIdentity()
-        glScalef(1.0, -1.0, 1.0)  # Flip vertically
+        glScalef(1.0, -1.0, 1.0)
         glMatrixMode(GL_MODELVIEW)
 
         self.quadric = gluNewQuadric()
         gluQuadricTexture(self.quadric, GL_TRUE)
-
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(45, self.width() / (self.height() or 1), 1.0, 100.0)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
 
     def loadTexture(self, path):
         img = QImage(path)
@@ -296,33 +297,38 @@ class GlobeWidget(QOpenGLWidget):
         tle_status = self.backend.tle_status
 
         #Delete satellites no longer in TLE data (except ground stations)
-        for key in list(self.spaceObjects.keys()):
-            obj = self.spaceObjects[key]
-            if obj.type != SpaceObjectType.GroundStation and key not in tle_data:
-                del self.spaceObjects[key]
+        if not self.previousKeys == tle_data.keys():
+            for key in list(self.spaceObjects.keys()):
+                obj = self.spaceObjects[key]
+                if obj.type != SpaceObjectType.GroundStation and key not in tle_data:
+                    del self.spaceObjects[key]
         
         if not tle_data and not tle_status:
+            self.backend.adjacencyMatrix = None
+            self.backend.adjacencyMatrixKeys = []
             print("Null passed")
             return
         
         print(f"SATELLITES - passed in {len(tle_data)} items")
         #Add new satellites
-        for key, lines in tle_data.items():
-            if key not in self.spaceObjects:
-                satellite = EarthSatellite(lines[0], lines[1], key)
-                self.spaceObjects[key] = Satellite(SpaceObjectType.Satellite, key, satellite)
+        if not tle_data.keys() <= self.spaceObjects.keys():
+            for key, lines in tle_data.items():
+                if key not in self.spaceObjects:
+                    satellite = EarthSatellite(lines[0], lines[1], key)
+                    self.spaceObjects[key] = Satellite(SpaceObjectType.Satellite, key, satellite, self.ts)
 
         #Changes boolean for show in space objects
         for name, value in tle_status.items():
             if self.spaceObjects[name].type == SpaceObjectType.GroundStation: continue
             self.spaceObjects[name].show = value
         
+        #BUG: Based on current time, but if future simulation is necessary then this needs to be changed
         local_now = datetime.now()
         offset_seconds = int((local_now - datetime.utcnow()).total_seconds())
         utc_seconds = self.backend.elapsedSeconds - offset_seconds
         currentTime = local_now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(seconds=utc_seconds)
         for obj in self.spaceObjects.values():
-            obj.Update(currentTime)
+            obj.Update(currentTime, ts=self.ts)
 
         positions = []
         keys = []
@@ -332,8 +338,9 @@ class GlobeWidget(QOpenGLWidget):
                 keys.append(key)
 
         if len(self.backend.satelliteNames) != len(keys):
-            self.backend.satelliteNames = [sat.name[-4:] for sat in self.spaceObjects.values() if sat.type==SpaceObjectType.Satellite]
+            self.backend.satelliteNames = [sat.name for sat in self.spaceObjects.values() if sat.type==SpaceObjectType.Satellite]
 
         self.ObjectAdjacencyMatrix.generate_adjacency_matrix(positions, keys)
+        self.previousKeys = tle_data.copy().keys()
 
 

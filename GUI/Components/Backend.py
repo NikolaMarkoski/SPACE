@@ -122,9 +122,14 @@ class Backend(metaclass=Singleton):
     #TODO: link tle_status[name] to the checkbox state, rather than hardcoding it 
 
     def delete(self, element_name):
-        print(self.tle_dict)
         del self.tle_dict[element_name]
         del self.tle_status[element_name]
+
+        self._notify()
+
+    def delete_all(self):
+        self.tle_dict.clear()
+        self.tle_status.clear()
 
         self._notify()
     

@@ -70,6 +70,7 @@ class AdjacencyMatrix():
         satellites = {key: value for key, value in objects.items() if (value.type==SpaceObjectType.Satellite and value.show)}
         groundStations = {key: value for key, value in objects.items() if (value.type==SpaceObjectType.GroundStation and value.show)}
         objs = list(satellites)
+        if len(objs) < 1: return
 
         #percentage stuff for future, hopefully
         #signalMaximum = np.max(adj_matrix)

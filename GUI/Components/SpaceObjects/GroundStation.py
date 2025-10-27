@@ -19,7 +19,7 @@ class GroundStation(SpaceObject):
         self.sphereRadius = 0.02
         self.color = (0.5,0.5,1)
 
-    def drawCone(self, radius=4, height=0.1, num_slices=40):
+    def drawCone(self, radius=0.5, height=0.1, num_slices=40):
         def getRotation():
             dir_x, dir_y, dir_z = self.position
        
@@ -60,6 +60,7 @@ class GroundStation(SpaceObject):
         glTranslate(*self.position)
         gluSphere(quadric, self.sphereRadius, 40, 40)
         glPopMatrix()
+        #self.drawCone()#Draw the Cone
 
     def getPositionFromCoordinates(self, long, lat):
         #Convert to radians if not in radian

@@ -11,16 +11,17 @@ from skyfield.api import EarthSatellite, wgs84
 from skyfield.constants import ERAD
 import math
 from datetime import datetime, timezone, timedelta
+from time import perf_counter_ns
 
 orbitResolution = 180
 
 class Satellite(SpaceObject):
     #A class to hold all information relating to a satellite to not overcrowd a dictionary
-    def __init__(self, type, name, satellite):
+    def __init__(self, type, name, satellite, ts):
         super().__init__(type, name)
         self.satellite = satellite
         self.position = (0,0,0)
-        self.positions = self.PopulateSatellitePositions()
+        self.positions = self.PopulateSatellitePositions(ts)
 
         self.showOrbit = True
         self.color = self.Color()
@@ -36,9 +37,9 @@ class Satellite(SpaceObject):
         self.DrawOrbit()
         self.Hover(quadric)
 
-    def Update(self, time=None):
+    def Update(self, time=None, ts=None):
         #assuming time is a datetime
-        ts = load.timescale()
+        if not ts: ts = load.timescale()
         now = time if time else datetime.now(timezone.utc)
         currentTime = ts.utc(now.year, now.month, now.day, now.hour, now.minute, now.second)
 
@@ -47,11 +48,11 @@ class Satellite(SpaceObject):
 
         self.position = position.copy()
 
-    def PopulateSatellitePositions(self):
+    def PopulateSatellitePositions(self, ts):
         revolutionsPerDay = self.satellite.model.no_kozai * 229.1831  # MinutesInADay/2Pi
         orbitalPeriod_days = 1.0 / revolutionsPerDay  # orbital period in days
 
-        ts = load.timescale()
+        if not ts: ts = load.timescale()
         now_dt = datetime.now(timezone.utc)
 
         # generate times as datetime objects

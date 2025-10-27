@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QGraphicsOpacityEffect, QSizePolicy, QPushButton, QVBoxLayout, QWidget, QMessageBox
+from PyQt5.QtWidgets import QGraphicsOpacityEffect, QSizePolicy, QPushButton, QVBoxLayout, QWidget, QMessageBox, QToolTip
+from PyQt5.QtCore import QPoint
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
@@ -54,24 +55,58 @@ class GraphDisplay(CollapsibleOverlay):
         self.canvas_conn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.graphLayout.addWidget(self.canvas_conn, stretch=5)
 
+    def on_node_hover(self, event):
+        if event.inaxes != self.ax_conn:
+            return
+
+        if self.conGraphNodes is None:
+            return
+
+        # Get positions and check mouse proximity
+        for node, (x, y) in self.conGraphPos.items():
+            # Convert data coords to pixel coords
+            xy_disp = self.ax_conn.transData.transform((x, y))
+            dx, dy = xy_disp[0] - event.x, xy_disp[1] - event.y
+            dist = (dx**2 + dy**2)**0.5
+
+            if dist < 10:  # adjust sensitivity threshold
+                node_name = self.backend.satelliteNames[node]
+                
+                inv_y = self.canvas_conn.height() - int(event.y)
+                QToolTip.showText(
+                    self.canvas_conn.mapToGlobal(QPoint(int(event.x), inv_y)),
+                    node_name,
+                    self.canvas_conn
+                )
+                return
+
+        QToolTip.hideText()
+
     def update_graphs(self):
         adj_matrix = self.backend.adjacencyMatrix
         keys = self.backend.adjacencyMatrixKeys
-
-        if adj_matrix is None: return
+        
+        if adj_matrix is None:
+            if self.adj_img is not None:
+                self.adj_img = None
+                self.ax_adj.clear()
+                self.canvas_adj.draw()
+            if self.conGraph is not None: 
+                self.conGraph = None
+                self.ax_conn.clear()
+                self.canvas_conn.draw()
+            return
         if self.oldMatrix is not None and np.array_equal(self.oldMatrix, adj_matrix): return
         try:
             # --- update adjacency graph ---
+            self.adj_img = self.ax_adj.imshow(adj_matrix, cmap='Blues', interpolation='none', aspect='equal')
             self.ax_adj.clear()
             self.ax_adj.imshow(adj_matrix, cmap='Blues', interpolation='none', aspect='equal')
             self.ax_adj.set_title('Adjacency Matrix')
             self.ax_adj.set_xticks(np.arange(len(keys)))
             self.ax_adj.set_yticks(np.arange(len(keys)))
             self.ax_adj.set_xticklabels(keys, rotation=90)
-            self.ax_adj.set_yticklabels(keys)
-
-            if self.canvas_adj.width() > 0 and self.canvas_adj.height() > 0:#Get rid of runtimeWarning
-                self.canvas_adj.draw()  
+            self.ax_adj.set_yticklabels(keys) 
 
             # --- update connection graph ---
             if self.conGraph is None:
@@ -79,7 +114,7 @@ class GraphDisplay(CollapsibleOverlay):
                 self.conGraphPos = nx.arf_layout(self.conGraph)
                 self.conGraphNodes = nx.draw_networkx_nodes(self.conGraph, self.conGraphPos, ax=self.ax_conn, node_color='skyblue', node_size=NODESIZE)
                 self.conGraphEdges = nx.draw_networkx_edges(self.conGraph, self.conGraphPos, ax=self.ax_conn, alpha=0.5, width=EDGESIZE)
-                self.conGraphLabels = nx.draw_networkx_labels(self.conGraph, self.conGraphPos, ax=self.ax_conn, font_size=FONTSIZE, labels={i: self.backend.satelliteNames[i] for i in self.conGraph.nodes()})
+                self.conGraphLabels = nx.draw_networkx_labels(self.conGraph, self.conGraphPos, ax=self.ax_conn, font_size=FONTSIZE, labels={i: self.backend.satelliteNames[i][0:3] for i in self.conGraph})
                 self.ax_conn.set_title('Connection Graph')
             else:
                 self.conGraph = nx.from_numpy_array(adj_matrix)
@@ -91,7 +126,7 @@ class GraphDisplay(CollapsibleOverlay):
                             label.remove()
                     self.conGraphPos = nx.arf_layout(self.conGraph)
                     self.conGraphNodes = nx.draw_networkx_nodes(self.conGraph, self.conGraphPos, ax=self.ax_conn, node_color='skyblue', node_size=NODESIZE)
-                    self.conGraphLabels = nx.draw_networkx_labels(self.conGraph, self.conGraphPos, ax=self.ax_conn, font_size=FONTSIZE, labels={i: self.backend.satelliteNames[i] for i in self.conGraph.nodes()})
+                self.conGraphLabels = nx.draw_networkx_labels(self.conGraph, self.conGraphPos, ax=self.ax_conn, font_size=FONTSIZE, labels={i: self.backend.satelliteNames[i][0:3] for i in self.conGraph})
 
                 if self.conGraphEdges:
                     self.conGraphEdges.remove()
@@ -99,6 +134,8 @@ class GraphDisplay(CollapsibleOverlay):
 
             if self.canvas_conn.width() > 0 and self.canvas_adj.height() > 0:
                 self.canvas_conn.draw()
+                self.canvas_adj.draw()
+                self.canvas_conn.mpl_connect('motion_notify_event', self.on_node_hover)
 
             self.oldMatrix = adj_matrix.copy()
 
@@ -107,85 +144,3 @@ class GraphDisplay(CollapsibleOverlay):
         except Exception as e:
             print(f"Exception Occurred: {e}\nTraceback:\n{''.join(traceback.format_exception(e))}")
 
-#        
-#
-#        # Controls layout
-#        self.controlsLayout = QVBoxLayout()
-#        self.graphLayout.addLayout(self.controlsLayout, stretch=2)
-#
-#        def update_graphs(self, positions):
-#        #Update the adjacency matrix and network graph plots.
-#        try:
-#            adj_matrix, keys = self.simulation.generate_adjacency_matrix(positions)
-#            self.axes[0].cla()
-#            self.axes[1].cla()
-#
-#            self.axes[0].imshow(adj_matrix, cmap='Blues', interpolation='none', aspect='equal')
-#            self.axes[0].set_title('Adjacency Matrix')
-#            self.axes[0].set_xticks(np.arange(len(keys)))
-#            self.axes[0].set_yticks(np.arange(len(keys)))
-#            self.axes[0].set_xticklabels(keys, rotation=90)
-#            self.axes[0].set_yticklabels(keys)
-#
-#            G = nx.from_numpy_array(adj_matrix)
-#            pos = nx.spring_layout(G)
-#            nx.draw(G, pos, ax=self.axes[1], with_labels=True, node_color='skyblue')
-#            self.axes[1].set_title('Network Graph')
-#
-#            self.canvas.draw()
-#        except ValueError as e:
-#            QMessageBox.critical(self, "Error", f"An error occurred during graph update: {e}")
-#
-#
-#       def calculate_distance(self, pos1, pos2):
-#               # Calculate the Euclidean distance between two satellite positions.
-#               return np.linalg.norm(np.array(pos1) - np.array(pos2))
-#       
-#           def generate_adjacency_matrix(self, positions, distance_threshold=10000):
-#               # Generate an adjacency matrix based on the distances between satellites.
-#               keys = list(positions.keys())
-#               size = len(keys)
-#               adj_matrix = np.zeros((size, size), dtype=int)
-#       
-#               # Compute distances between all satellite pairs and populate the adjacency matrix
-#               for i in range(size):
-#                   for j in range(i + 1, size):
-#                       dist = self.calculate_distance(positions[keys[i]], positions[keys[j]])
-#                       adj_matrix[i, j] = adj_matrix[j, i] = 1 if dist < distance_threshold else 0
-#       
-#               return adj_matrix, keys
-#
-#def save_adj_matrix_for_specified_timeframe(self):
-#        #Save the adjacency matrices and network graphs to files.
-#        try:
-#            output_file, _ = QFileDialog.getSaveFileName(self, "Save Adjacency Matrix", "", "Text Files (*.txt);;All Files (*)")
-#            pdf_file, _ = QFileDialog.getSaveFileName(self, "Save Network Graphs PDF", "", "PDF Files (*.pdf);;All Files (*)")
-#
-#            if output_file and pdf_file:
-#                matrices = self.simulation.run_with_adj_matrix()
-#                if not matrices:
-#                    QMessageBox.warning(self, "No Data", "No data was generated to save.")
-#                    return
-#
-#                with open(output_file, 'w') as f:
-#                    for timestamp, matrix in matrices:
-#                        formatted_timestamp = timestamp if isinstance(timestamp, str) else timestamp.utc_iso()
-#                        f.write(f"Time: {formatted_timestamp}\n")
-#                        np.savetxt(f, matrix, fmt='%d')
-#                        f.write("\n")
-#
-#                with PdfPages(pdf_file) as pdf:
-#                    for timestamp, matrix in matrices:
-#                        formatted_timestamp = timestamp if isinstance(timestamp, str) else timestamp.utc_iso()
-#                        G = nx.from_numpy_array(matrix)
-#                        pos = nx.spring_layout(G)
-#                        plt.figure()
-#                        nx.draw(G, pos, with_labels=True, node_color='skyblue')
-#                        plt.title(f"Network Graph at {formatted_timestamp}")
-#                        pdf.savefig()
-#                        plt.close()
-#
-#                QMessageBox.information(self, "Success", "Adjacency matrix and network graphs saved successfully!")
-#
-#        except Exception as e:
-#            QMessageBox.critical(self, "Error", f"An error occurred while saving the matrix: {e}")

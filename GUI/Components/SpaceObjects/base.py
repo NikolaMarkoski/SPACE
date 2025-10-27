@@ -16,5 +16,5 @@ class SpaceObject():
     def Draw(self):
         pass
 
-    def Update(self, time=None):
+    def Update(self, time=None, ts=None):
         pass
