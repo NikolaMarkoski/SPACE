@@ -338,7 +338,7 @@ class GlobeWidget(QOpenGLWidget):
                 keys.append(key)
 
         if len(self.backend.satelliteNames) != len(keys):
-            self.backend.satelliteNames = [sat.name for sat in self.spaceObjects.values() if sat.type==SpaceObjectType.Satellite]
+            self.backend.satelliteNames = [sat.name for sat in self.spaceObjects.values() if sat.type==SpaceObjectType.Satellite and sat.show]
 
         self.ObjectAdjacencyMatrix.generate_adjacency_matrix(positions, keys)
         self.previousKeys = tle_data.copy().keys()
