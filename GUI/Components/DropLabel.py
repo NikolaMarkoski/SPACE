@@ -1,3 +1,9 @@
+"""
+Filename: DropLabel.py
+Author: Luke Magnuson
+Description: This script serves as a way for the user to supply TLE files.
+It supplies a signal when the user drops a file, which contains the file path of the dropped file.
+"""
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtCore import Qt, pyqtSignal
 

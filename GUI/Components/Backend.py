@@ -1,3 +1,12 @@
+"""
+Filename: Backend.py
+Author: Luke Magnuson
+Description: This script holds the sat_sim instance and, due to being a singleton, serves as a single point of contact for other classes to interact with.
+The script maintains a local dictionary of TLE data from files passed in by the user, as well as a separate dictionary which holds the enabled 
+status of the data, based on the associated TLESLot for that data.
+the script also holds functions for adding and clearing data from the list.
+finally, the script contains a subscriber list that components can add themselves to, and the event is triggered whenever the tle_dictionary is modified.
+"""
 import sys
 
 # setting path

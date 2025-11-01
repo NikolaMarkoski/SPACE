@@ -1,3 +1,8 @@
+"""
+Filename: Satellite.py
+Author: Nikola Markoski, Kartik Punna
+Description: This file contains the functions that relate to drawing the satellites and their orbits, updating their positions, and drawing their hover
+"""
 import numpy as np
 
 from .base import SpaceObject
@@ -6,12 +11,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from skyfield.api import load
-from skyfield.api import EarthSatellite, wgs84
 
 from skyfield.constants import ERAD
-import math
 from datetime import datetime, timezone, timedelta
-from time import perf_counter_ns
 
 orbitResolution = 180
 

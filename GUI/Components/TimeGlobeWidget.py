@@ -1,22 +1,14 @@
-import sys
-import numpy as np
 from PyQt5.QtCore import Qt, QTime, QTimer, QPropertyAnimation, QEasingCurve, QRect
-from PyQt5.QtGui import QFontDatabase, QFont, QSurfaceFormat, QImage
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QSlider, QOpenGLWidget, QRadioButton, QTimeEdit
+    QWidget, QVBoxLayout, QHBoxLayout, QMessageBox,
+    QLabel, QPushButton, QSlider, QRadioButton, QTimeEdit
 )
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget, QFrame, QGraphicsOpacityEffect, QLineEdit
+from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget, QLineEdit
 
-import math
 import datetime
-import os
-import skyfield
-from skyfield.api import load
-from skyfield.api import Timescale
-from skyfield.api import EarthSatellite
 
 from Components.GlobeWidget import GlobeWidget
 from Components.Backend import Backend
@@ -177,7 +169,7 @@ class TimeGlobeWidget(QWidget):
 
     def now(self):
         self.timer.stop()
-        self.time = QTime.currentTime()
+        self.time = min(QTime.currentTime(), self.end_tf.time() if self.end_tf.time() != QTime(0,0) else QTime.currentTime())
         self.time_display.setText(self.time.toString("hh:mm:ss"))
         self.slider.blockSignals(True)
         self.slider.setValue((QTime(0, 0).secsTo(self.time)))
@@ -187,7 +179,7 @@ class TimeGlobeWidget(QWidget):
 
     def midnight(self):
         self.timer.stop()
-        self.time = QTime(0, 0, 0)
+        self.time = max(QTime(0, 0, 0), self.start_tf.time())
         self.slider.setValue(0)
         self.time_display.setText(self.time.toString("hh:mm:ss"))
         self.update()
@@ -223,8 +215,15 @@ class TimeGlobeWidget(QWidget):
         self.anim.start()
 
     def edit_time(self):
+        if self.start_tf.time() >= self.end_tf.time():
+            self.start_tf.setTime(QTime(0,0))
+            self.end_tf.setTime(QTime(0,0))
+            QMessageBox.critical(self, "ERROR", "Start time has to be later than the end time")
+            return
         self.slider.setRange((self.start_tf.time().msecsSinceStartOfDay() // 1000),(self.end_tf.time().msecsSinceStartOfDay() // 1000))
         print(self.start_tf.time(), self.end_tf.time())
+        self.backend.instance.start_time = datetime.datetime.combine(datetime.date.today(), self.start_tf.time().toPyTime()).replace(tzinfo=datetime.timezone.utc)
+        self.backend.instance.end_time = datetime.datetime.combine(datetime.date.today(), self.end_tf.time().toPyTime()).replace(tzinfo=datetime.timezone.utc)
         print((self.start_tf.time().msecsSinceStartOfDay() // 1000),(self.end_tf.time().msecsSinceStartOfDay() // 1000))
         print(self.slider.maximum())
 

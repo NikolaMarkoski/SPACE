@@ -1,3 +1,13 @@
+"""
+Filename: TLESlot.py
+Author: Luke Magnuson
+Description: This script is used by the user to control and display specific instances of TLE data that the user supplies.
+each slot contains:
+    - A checkbox to determine if a satellite is displayed
+    - A Button to delete the specific instance of TLE data
+    - A button to cycle through the slot display states. A slot can be in a collapsed, brief, or detailed state, 
+        which determines how much information on the tle data the slot displayed
+"""
 from PyQt5.QtWidgets import (
     QApplication, QFrame, QPushButton, QCheckBox, QWidget, QLabel,
     QHBoxLayout, QVBoxLayout

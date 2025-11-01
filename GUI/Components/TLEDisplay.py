@@ -1,3 +1,11 @@
+"""
+Filename: TLEDisplay.py
+Author: Luke Magnuson
+Description: This script derives from CollapsibleOverlay and serves as a user control.
+The user can drop TLE files in to the application, which are passed to the backend, and in to the sat_sim instance.
+Included TLE files are reflected from the backend using TLESlots, through which the user can interact with the system.
+"""
+
 #Set simulation tle_data to whatever is returned from get_data_from_enabled_tle_slots().
 #when instancing TLE_Display, connect your update visuals code using tle_display.update_signal.connect('function name here')
 

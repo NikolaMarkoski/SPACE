@@ -1,3 +1,8 @@
+"""
+Filename: Application.py
+Author: Luke Magnuson, Sean Kelly
+Description: This script handles setting up the backend and frontend of the GUItool, serving as a single point of access for the user.
+"""
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QOpenGLWidget
 

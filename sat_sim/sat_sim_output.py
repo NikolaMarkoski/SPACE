@@ -80,7 +80,7 @@ class SatSimOutput:
                 return False
 
             # Open the file in write mode to overwrite existing content
-            with open(file, "w") as f:
+            with open(file, "w+") as f:
                 if keys and len(keys) > 0:
                     num_satellites = len(keys)
                     f.write(f"Number of satellites: {num_satellites}\n")

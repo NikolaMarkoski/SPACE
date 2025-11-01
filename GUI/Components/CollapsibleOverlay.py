@@ -1,3 +1,9 @@
+"""
+Filename: CollapsibleOverlay.py
+Author: Luke Magnuson
+Description: This script serves as a parent class for the GraphDisplay and TLEDisplay classes.
+It handles the expansion and collapse functions, as well as any related functions. it also holds a reference to the content layout for derived classes
+"""
 from PyQt5.QtCore import QEasingCurve, QPropertyAnimation, QEvent, QParallelAnimationGroup
 from PyQt5.QtWidgets import QPushButton, QWidget, QFrame, QHBoxLayout, QVBoxLayout, QGraphicsOpacityEffect
 from enum import Enum

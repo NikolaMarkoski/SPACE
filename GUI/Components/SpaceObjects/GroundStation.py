@@ -1,13 +1,14 @@
-import sys
+"""
+Filename: GroundStation.py
+Author: Nikola Markoski, Sean Kelly
+Description: This file includes all the functions needed for plotting the locations of ground stations on the globe and finding the rotations of the communication cones.
+Although the rotations don't work too well.
+"""
 import numpy as np
-
-from PyQt5.QtWidgets import QApplication, QMainWindow, QOpenGLWidget
-from PyQt5.QtCore import pyqtSignal
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from skyfield.constants import ERAD
 import math
 
 from .base import SpaceObject

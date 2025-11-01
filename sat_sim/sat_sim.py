@@ -6,7 +6,7 @@ Description: This script handles satellite simulations using TLE data and provid
              both GUI and CLI operations.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from skyfield.api import load, EarthSatellite, utc
 from skyfield.constants import ERAD
 import numpy as np
@@ -128,17 +128,23 @@ class SatSim:
             print("No TLE data loaded. Please provide valid TLE data.")
             return []
 
-        current_time = self.start_time
-        end_time = self.end_time
+        current_time = self.start_time if not isinstance(self.start_time, datetime) else self.sf_timescale.from_datetime(self.start_time)
+        end_time = self.end_time if not isinstance(self.end_time, datetime) else self.sf_timescale.from_datetime(self.end_time)
         timestep_days = self.timestep.total_seconds() / 86400.0
 
         matrices = []
-        timestamps = []
+
+        local_now = datetime.now()
+        utc_now = datetime.utcnow()
+        offset = local_now - utc_now
 
         # Loop through time increments and generate adjacency matrices
         while current_time.tt < end_time.tt:
             try:
-                positions = self.get_satellite_positions(current_time)
+                #current time is originally based on the local time, but the satellites are based on utc time
+                #This offset should fix that without changing the output
+                current_time_utc = current_time - offset
+                positions = self.get_satellite_positions(current_time_utc)
 
                 if not positions:
                     print(f"Skipping timestep {current_time.utc_datetime()}: No positions calculated.")
@@ -159,7 +165,7 @@ class SatSim:
                 break
 
         # Save results using the output module
-        if self.output_to_file and matrices:
+        if self.output_to_file and matrices and 0:
             self.output.set_tle_keys(list(self.tle_data.keys()))
             self.output.save_matrices(matrices)
         else:

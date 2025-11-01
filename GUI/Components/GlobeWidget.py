@@ -1,25 +1,25 @@
-import sys
+"""
+Filename: GlobeWidget.py
+Author: Sean Kelly, Nikola Markoski
+Description: This file sets up the OpenGl Scene for other files to draw to. 
+It also acts as the mainloop to update the scene and draws the globe, satellites, and groundstations.
+It also includes features to track mouse movement and change the scene based on its position.
+"""
 import numpy as np
-from PyQt5.QtCore import Qt, QTime, QTimer, QPropertyAnimation, QEasingCurve, QPoint
-from PyQt5.QtGui import QFontDatabase, QFont, QSurfaceFormat, QImage, QKeyEvent
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QSlider, QOpenGLWidget
-)
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QImage
+from PyQt5.QtWidgets import QOpenGLWidget
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget, QFrame, QGraphicsOpacityEffect, QLineEdit, QToolTip
+from PyQt5.QtWidgets import QToolTip
 from PyQt5.QtGui import QCursor
 
 import math
-from datetime import datetime, timezone, timedelta
-import os
-import skyfield
+from datetime import datetime, timedelta
 from skyfield.api import load
-from skyfield.api import Timescale
 from skyfield.api import EarthSatellite
 
-from .SpaceObjects import SpaceObject, SpaceObjectType, Satellite, GroundStation
+from .SpaceObjects import SpaceObjectType, Satellite, GroundStation
 from Components.AdjacencyMatrix import AdjacencyMatrix
 
 class GlobeWidget(QOpenGLWidget):
@@ -194,6 +194,7 @@ class GlobeWidget(QOpenGLWidget):
         for sx, sy, sz, sat in self.twoDPoints:
             if sat == "Globe": continue
             #Temporary fix, sz checks if the satellite is closer to the camera than the earth, but this partially works as satellites can be visible but be further. And also this assumes the camera acts on the same axis.
+            #A better way would be to check if the hypotenuse from the center to the point is less than the radius of the current earth.
             radius = self.height() * sat.sphereRadius * sz
             if abs(x - sx) <= radius and abs(y - sy) <= radius and sz < self.twoDPoints[-1][2]:
                 if sz < min_depth:

@@ -1,3 +1,8 @@
+"""
+Filename: AdjacencyMatrix.py
+Author: Nikola Markoski
+Description: This file houses the functions that relate to creating and drawing the adjacency matrix.
+"""
 import numpy as np
 
 from OpenGL.GL import *

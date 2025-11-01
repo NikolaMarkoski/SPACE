@@ -1,4 +1,10 @@
-﻿def generate_adjacency_matrix(self, positions, tx_power_dbm=20.0, tx_gain_db=0.0, rx_gain_db=0.0, freq_hz=2.4e9, extra_loss_db=0.0, blocked_loss_db=999.0, min_distance=1e-3):
+﻿"""
+Filename: PossiblyUsefulFunctions.py
+Author: Nikola Markoski
+Description: This file contains functions that could be handy in the future
+"""
+
+def generate_adjacency_matrix(self, positions, tx_power_dbm=20.0, tx_gain_db=0.0, rx_gain_db=0.0, freq_hz=2.4e9, extra_loss_db=0.0, blocked_loss_db=999.0, min_distance=1e-3):
         c = 3e8
 
         if not self.satellites:
