@@ -48,6 +48,7 @@ class GlobeWidget(QOpenGLWidget):
         self.camRadius = 5.0
         self.camAzimuth = 0.0
         self.camElevation = 0.0
+        self.camCenter = (0.0,0.0,0.0)
         self.ts = load.timescale()
 
     def resizeGL(self, width, height):
@@ -109,7 +110,7 @@ class GlobeWidget(QOpenGLWidget):
 
         # Position the camera
         eye = self.get_camera_position()
-        gluLookAt(*eye, 0, 0, 0, 0, 1, 0)
+        gluLookAt(*eye, *self.camCenter, 0, 1, 0)
 
         # FIX 1: Align poles vertically (Z → Y)
         glRotatef(-90, 1, 0, 0)  # Rotate globe forward so poles face up/down
@@ -210,6 +211,15 @@ class GlobeWidget(QOpenGLWidget):
             if currentSatellite:
                 currentSatellite.showOrbit ^= True
             self.update()
+        if event.button() == Qt.MiddleButton:
+            closest_point = self.getCurrentObject(event.x(),event.y())
+            if closest_point:
+                (x,y,z)= closest_point.position
+                self.camCenter = (x/2,y/2,z/2)
+                self.update()
+            else:
+                self.camCenter = (0.0,0.0,0.0)
+                self.update()
     
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -263,9 +273,9 @@ class GlobeWidget(QOpenGLWidget):
         az = math.radians(self.camAzimuth)
         el = math.radians(self.camElevation)
 
-        x = self.camRadius * math.cos(el) * math.sin(az)
-        y = self.camRadius * math.sin(el)
-        z = self.camRadius * math.cos(el) * math.cos(az)
+        x = self.camCenter[0] + self.camRadius * math.cos(el) * math.sin(az)
+        y = self.camCenter[1] + self.camRadius * math.sin(el)
+        z = self.camCenter[2] + self.camRadius * math.cos(el) * math.cos(az)
         return x, y, z
 
     #for debugging Purposes
